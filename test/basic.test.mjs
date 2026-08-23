@@ -50,3 +50,27 @@ test("compact trims oldest messages to a hard budget, keeps system", () => {
   assert.ok(report.afterTokens <= 300 || report.savedTokens > 0);
   assert.equal(out.messages[0].role, "system");
 });
+
+test("compact trims a large payload with linear token counting", () => {
+  const messages = Array.from({ length: 500 }, (_, i) => ({
+    role: "user",
+    content: `message-${i}`,
+  }));
+  let counterCalls = 0;
+  const counter = () => {
+    counterCalls++;
+    return 1;
+  };
+
+  const { payload: out, report } = compact(
+    { messages },
+    { maxTokens: 4, keepLastTurns: 4, dropDuplicates: false, counter },
+  );
+
+  assert.deepEqual(out.messages, messages.slice(-4));
+  assert.equal(report.beforeTokens, 500);
+  assert.equal(report.afterTokens, 4);
+  assert.equal(report.savedTokens, 496);
+  assert.equal(report.actions.length, 496);
+  assert.ok(counterCalls <= messages.length * 3, `counter called ${counterCalls} times`);
+});
