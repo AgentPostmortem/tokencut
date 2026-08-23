@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Invalid or negative numeric CLI flags now fail clearly instead of producing
+  `NaN` costs or silently skipping token-budget compaction.
+
 ## [0.1.1] - 2026-08-06
 
 ### Changed

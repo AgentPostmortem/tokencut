@@ -74,6 +74,8 @@ tokencut <payload.json> --compact    cut, print savings
   --json           machine-readable output
 ```
 
+Numeric flags must be finite and non-negative. A zero token budget is valid.
+
 ## License
 
 [MIT](LICENSE)
