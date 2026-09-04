@@ -23,7 +23,20 @@ Payload: an array of messages, or { system, messages } (Anthropic or OpenAI styl
   process.exit(file ? 0 : 1);
 }
 
-const price = Number(flag("--price", 3));
+const numericFlag = (name, def) => {
+  const raw = flag(name, def);
+  const value = Number(raw);
+  if (typeof raw === "boolean" || !Number.isFinite(value) || value < 0) {
+    console.error(
+      `${name} must be a finite, non-negative number; received ${JSON.stringify(raw)}`,
+    );
+    process.exit(1);
+  }
+  return value;
+};
+const price = numericFlag("--price", 3);
+const maxTokens = has("--max") ? numericFlag("--max", null) : null;
+const maxToolResultTokens = numericFlag("--max-tool", 500);
 let payload;
 try { payload = JSON.parse(readFileSync(file, "utf8")); }
 catch (e) { console.error(`could not read ${file}: ${e.message}`); process.exit(1); }
@@ -33,8 +46,8 @@ const usd = (n) => "$" + n.toFixed(n < 0.01 ? 5 : 4);
 
 if (has("--compact")) {
   const res = compact(payload, {
-    maxTokens: flag("--max", null) ? Number(flag("--max", null)) : null,
-    maxToolResultTokens: Number(flag("--max-tool", 500)),
+    maxTokens,
+    maxToolResultTokens,
     dropDuplicates: !has("--no-dedupe"),
   });
   if (flag("--out", null)) { writeFileSync(String(flag("--out", null)), JSON.stringify(res.payload, null, 2)); }
