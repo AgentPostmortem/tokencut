@@ -107,23 +107,29 @@ export function compact(payload, opts = {}) {
     m.content = kept;
   }
 
+  // Measure the transformed payload once, then keep the total additive while
+  // trimming so each dropped message is counted only once.
+  let after = analyzePayload(out, { counter }).totalTokens;
+
   // trim oldest non-system messages to fit a hard budget
   if (maxTokens != null) {
     const isSystem = (m) => (m.role || "") === "system";
     let i = 0;
-    while (analyzePayload(out, { counter }).totalTokens > maxTokens) {
+    while (after > maxTokens) {
       const list = Array.isArray(out) ? out : out.messages;
       const trimmableEnd = list.length - keepLastTurns;
       // find the oldest non-system, trimmable message
       let idx = -1;
       for (let j = 0; j < Math.max(0, trimmableEnd); j++) { if (!isSystem(list[j])) { idx = j; break; } }
       if (idx < 0) break; // nothing left safe to drop
+      const removed = list[idx];
+      after -= blocksOf(removed.content, removed.role || "user")
+        .reduce((total, unit) => total + counter(unit.text), 0);
       list.splice(idx, 1);
       actions.push("drop:oldest-message");
       if (++i > 1000) break;
     }
   }
 
-  const after = analyzePayload(out, { counter }).totalTokens;
   return { payload: out, report: { beforeTokens: before, afterTokens: after, savedTokens: before - after, savedPct: before ? Math.round(((before - after) / before) * 100) : 0, actions } };
 }
