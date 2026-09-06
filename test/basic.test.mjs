@@ -74,3 +74,21 @@ test("compact trims a large payload with linear token counting", () => {
   assert.equal(report.actions.length, 496);
   assert.ok(counterCalls <= messages.length * 3, `counter called ${counterCalls} times`);
 });
+
+test("compact rejects invalid budgets before transforming the payload", () => {
+  const payload = { messages: [{ role: "user", content: "keep me" }] };
+  const invalidOptions = [
+    ["maxToolResultTokens", -1],
+    ["maxToolResultTokens", Number.POSITIVE_INFINITY],
+    ["maxTokens", Number.NaN],
+    ["keepLastTurns", -1],
+    ["keepLastTurns", 1.5],
+  ];
+
+  for (const [name, value] of invalidOptions) {
+    assert.throws(
+      () => compact(payload, { [name]: value }),
+      { name: "RangeError", message: new RegExp(`${name} must be`) },
+    );
+  }
+});
