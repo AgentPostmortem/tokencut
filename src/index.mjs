@@ -57,6 +57,11 @@ export function analyzePayload(payload, { pricePerMTok = 3, counter = estimateTo
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function tokensToChars(t) { return Math.max(0, Math.round(t * 4)); }
+function requireNonNegativeNumber(name, value, { integer = false } = {}) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || (integer && !Number.isInteger(value))) {
+    throw new RangeError(`${name} must be a non-negative${integer ? " integer" : " finite number"}`);
+  }
+}
 
 // Cut a payload's token cost deterministically. Returns { payload, report }.
 // Options:
@@ -66,6 +71,9 @@ function tokensToChars(t) { return Math.max(0, Math.round(t * 4)); }
 //   keepLastTurns        never drop the last N messages when trimming to budget (default 4)
 export function compact(payload, opts = {}) {
   const { maxToolResultTokens = 500, dropDuplicates = true, maxTokens = null, keepLastTurns = 4, counter = estimateTokens } = opts;
+  requireNonNegativeNumber("maxToolResultTokens", maxToolResultTokens);
+  if (maxTokens != null) requireNonNegativeNumber("maxTokens", maxTokens);
+  requireNonNegativeNumber("keepLastTurns", keepLastTurns, { integer: true });
   const before = analyzePayload(payload, { counter }).totalTokens;
   const out = clone(payload);
   const actions = [];

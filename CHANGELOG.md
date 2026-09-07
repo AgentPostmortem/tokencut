@@ -6,6 +6,8 @@
 
 - Invalid or negative numeric CLI flags now fail clearly instead of producing
   `NaN` costs or silently skipping token-budget compaction.
+- `compact()` now rejects negative or non-finite token budgets and invalid
+  protected-turn counts before transforming the payload.
 
 ## [0.1.1] - 2026-08-06
 

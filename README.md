@@ -55,6 +55,9 @@ const { payload, report: cut } = compact(messages, {
 // cut -> { beforeTokens, afterTokens, savedTokens, savedPct, actions }
 ```
 
+Token budgets must be finite, non-negative numbers. `keepLastTurns` must also
+be an integer; invalid values throw a `RangeError` before the payload changes.
+
 `payload` is an array of messages, or `{ system, messages }`. Message `content` may be a string or an array of Anthropic-style blocks.
 
 ## Accuracy
