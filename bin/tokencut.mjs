@@ -3,9 +3,23 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { analyzePayload, compact } from "../src/index.mjs";
 
 const args = process.argv.slice(2);
-const flag = (name, def) => { const i = args.indexOf(name); return i >= 0 ? (args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true) : def; };
-const has = (name) => args.includes(name);
-const file = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1] !== "--max" && args[args.indexOf(a) - 1] !== "--max-tool" && args[args.indexOf(a) - 1] !== "--price" && args[args.indexOf(a) - 1] !== "--out");
+// Value-taking flags: when one is seen, the next argv entry is its value, not a file path.
+const VALUE_FLAGS = new Set(["--max", "--max-tool", "--price", "--out"]);
+const options = {};
+const positionals = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (VALUE_FLAGS.has(a)) {
+    options[a] = args[i + 1] && !args[i + 1].startsWith("--") ? args[++i] : true;
+  } else if (a.startsWith("--")) {
+    options[a] = true;
+  } else {
+    positionals.push(a);
+  }
+}
+const flag = (name, def) => (name in options ? options[name] : def);
+const has = (name) => name in options;
+const file = positionals[0];
 
 if (!file || has("--help")) {
   console.log(`tokencut -- measure and cut the token cost of an LLM/agent payload
@@ -50,7 +64,15 @@ if (has("--compact")) {
     maxToolResultTokens,
     dropDuplicates: !has("--no-dedupe"),
   });
-  if (flag("--out", null)) { writeFileSync(String(flag("--out", null)), JSON.stringify(res.payload, null, 2)); }
+  if (flag("--out", null)) {
+    const outPath = String(flag("--out", null));
+    try {
+      writeFileSync(outPath, JSON.stringify(res.payload, null, 2));
+    } catch (e) {
+      console.error(`could not write ${outPath}: ${e.message}`);
+      process.exit(1);
+    }
+  }
   if (has("--json")) { console.log(JSON.stringify(res.report, null, 2)); process.exit(0); }
   const r = res.report;
   console.log(`\n  tokencut compact`);
