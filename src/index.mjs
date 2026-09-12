@@ -36,7 +36,20 @@ function blocksOf(content, role) {
 function units(payload) {
   const out = [];
   if (payload && !Array.isArray(payload) && payload.system) out.push(...blocksOf(payload.system, "system"));
-  const msgs = Array.isArray(payload) ? payload : (payload && payload.messages) || [];
+  let msgs;
+  if (Array.isArray(payload)) {
+    msgs = payload;
+  } else if (payload == null) {
+    msgs = [];
+  } else if (payload.messages == null) {
+    msgs = [];
+  } else if (!Array.isArray(payload.messages)) {
+    throw new TypeError(
+      'tokencut: payload.messages must be an array (got ' + typeof payload.messages + ')',
+    );
+  } else {
+    msgs = payload.messages;
+  }
   for (const m of msgs) out.push(...blocksOf(m.content, m.role || "user"));
   return out;
 }
@@ -51,7 +64,7 @@ export function analyzePayload(payload, { pricePerMTok = 3, counter = estimateTo
     byRole[u.role] = (byRole[u.role] || 0) + u.tokens;
   }
   const biggest = [...us].sort((a, b) => b.tokens - a.tokens).slice(0, top)
-    .map((u) => ({ role: u.role, kind: u.kind, tokens: u.tokens, preview: u.text.slice(0, 80).replace(/\s+/g, " ") }));
+    .map((u) => ({ role: u.role, kind: u.kind, tokens: u.tokens, preview: String(u.text ?? "").slice(0, 80).replace(/\s+/g, " ") }));
   return { totalTokens: total, costUSD: (total / 1e6) * pricePerMTok, units: us.length, byKind, byRole, biggest };
 }
 
