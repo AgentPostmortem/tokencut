@@ -77,7 +77,12 @@ export function compact(payload, opts = {}) {
   const before = analyzePayload(payload, { counter }).totalTokens;
   const out = clone(payload);
   const actions = [];
-  const msgs = Array.isArray(out) ? out : out.messages || [];
+  // System-only payloads ({ system: "..." }) have no messages array — ensure one
+  // so trimming never reads .length on undefined.
+  if (!Array.isArray(out) && !Array.isArray(out.messages)) {
+    out.messages = [];
+  }
+  const msgs = Array.isArray(out) ? out : out.messages;
   const seen = new Set();
 
   for (const m of msgs) {
@@ -124,7 +129,8 @@ export function compact(payload, opts = {}) {
     const isSystem = (m) => (m.role || "") === "system";
     let i = 0;
     while (after > maxTokens) {
-      const list = Array.isArray(out) ? out : out.messages;
+      const list = Array.isArray(out) ? out : (out.messages || []);
+      if (!list.length) break;
       const trimmableEnd = list.length - keepLastTurns;
       // find the oldest non-system, trimmable message
       let idx = -1;
