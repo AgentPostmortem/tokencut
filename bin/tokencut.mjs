@@ -7,6 +7,16 @@ const flag = (name, def) => { const i = args.indexOf(name); return i >= 0 ? (arg
 const has = (name) => args.includes(name);
 const file = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1] !== "--max" && args[args.indexOf(a) - 1] !== "--max-tool" && args[args.indexOf(a) - 1] !== "--price" && args[args.indexOf(a) - 1] !== "--out");
 
+if (has("--version") || has("-V")) {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    console.log(pkg.version ?? "0.0.0");
+  } catch {
+    console.log("0.0.0");
+  }
+  process.exit(0);
+}
+
 if (!file || has("--help")) {
   console.log(`tokencut -- measure and cut the token cost of an LLM/agent payload
 
