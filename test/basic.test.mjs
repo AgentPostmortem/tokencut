@@ -93,6 +93,7 @@ test("compact rejects invalid budgets before transforming the payload", () => {
   }
 });
 
+
 test("analyzePayload null / undefined yields zero tokens", () => {
   assert.equal(analyzePayload(null).totalTokens, 0);
   assert.equal(analyzePayload(undefined).totalTokens, 0);
@@ -117,4 +118,28 @@ test("compact null payload returns empty messages without throwing", () => {
   assert.deepEqual(out, { messages: [] });
   assert.equal(report.beforeTokens, 0);
   assert.equal(report.afterTokens, 0);
+});
+test("analyzePayload empty messages yields zero tokens", () => {
+  const a = analyzePayload({ messages: [] });
+  assert.equal(a.totalTokens, 0);
+  assert.equal(a.units, 0);
+  assert.equal(a.costUSD, 0);
+  assert.deepEqual(a.biggest, []);
+});
+
+test("analyzePayload empty array payload yields zero tokens", () => {
+  const a = analyzePayload([]);
+  assert.equal(a.totalTokens, 0);
+  assert.equal(a.units, 0);
+});
+
+test("units rejects non-array payload.messages with TypeError", () => {
+  assert.throws(
+    () => analyzePayload({ messages: "not-an-array" }),
+    { name: "TypeError", message: /payload\.messages must be an array/ },
+  );
+  assert.throws(
+    () => compact({ messages: { bad: true } }),
+    { name: "TypeError", message: /payload\.messages must be an array/ },
+  );
 });
