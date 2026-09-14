@@ -93,6 +93,32 @@ test("compact rejects invalid budgets before transforming the payload", () => {
   }
 });
 
+
+test("analyzePayload null / undefined yields zero tokens", () => {
+  assert.equal(analyzePayload(null).totalTokens, 0);
+  assert.equal(analyzePayload(undefined).totalTokens, 0);
+});
+
+test("analyzePayload system-only object counts system text", () => {
+  const a = analyzePayload({ system: "You are a careful assistant." });
+  assert.ok(a.totalTokens > 0);
+  assert.ok(a.byRole.system > 0);
+  assert.equal(a.byRole.user ?? 0, 0);
+});
+
+test("compact preserves system-only payload under a tight budget", () => {
+  const payload = { system: "sys", messages: [] };
+  const { payload: out, report } = compact(payload, { maxTokens: 1, keepLastTurns: 0 });
+  assert.ok(out.system === "sys" || (out.messages && out.messages[0]?.role === "system"));
+  assert.ok(report.afterTokens >= 0);
+});
+
+test("compact null payload returns empty messages without throwing", () => {
+  const { payload: out, report } = compact(null);
+  assert.deepEqual(out, { messages: [] });
+  assert.equal(report.beforeTokens, 0);
+  assert.equal(report.afterTokens, 0);
+});
 test("analyzePayload empty messages yields zero tokens", () => {
   const a = analyzePayload({ messages: [] });
   assert.equal(a.totalTokens, 0);

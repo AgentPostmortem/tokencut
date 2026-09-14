@@ -87,6 +87,12 @@ export function compact(payload, opts = {}) {
   requireNonNegativeNumber("maxToolResultTokens", maxToolResultTokens);
   if (maxTokens != null) requireNonNegativeNumber("maxTokens", maxTokens);
   requireNonNegativeNumber("keepLastTurns", keepLastTurns, { integer: true });
+  if (payload == null) {
+    return {
+      payload: { messages: [] },
+      report: { beforeTokens: 0, afterTokens: 0, savedTokens: 0, savedPct: 0, actions: [] },
+    };
+  }
   const before = analyzePayload(payload, { counter }).totalTokens;
   const out = clone(payload);
   const actions = [];
