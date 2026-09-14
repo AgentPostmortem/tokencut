@@ -92,3 +92,31 @@ test("compact rejects invalid budgets before transforming the payload", () => {
     );
   }
 });
+
+test("analyzePayload handles empty messages and whitespace-only content", () => {
+  const empty = analyzePayload({ messages: [] });
+  assert.equal(empty.totalTokens, 0);
+
+  const whitespace = analyzePayload({
+    messages: [{ role: "user", content: "   \n\t  " }],
+  });
+  assert.ok(whitespace.totalTokens >= 0);
+
+  const mixed = analyzePayload({
+    system: "",
+    messages: [
+      { role: "user", content: [] },
+      { role: "assistant", content: "" },
+    ],
+  });
+  assert.ok(mixed.totalTokens >= 0);
+});
+
+test("compact is a no-op on already-small payloads", () => {
+  const payload = {
+    messages: [{ role: "user", content: "hi" }],
+  };
+  const { payload: out, report } = compact(payload, { maxTokens: 10_000 });
+  assert.equal(out.messages.length, 1);
+  assert.ok(report.afterTokens <= report.beforeTokens);
+});
