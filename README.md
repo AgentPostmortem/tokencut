@@ -31,6 +31,33 @@ npx tokencut payload.json --compact --max 8000   # cut it to fit, see the saving
   actions  truncate:tool_result x14, dedupe:block x6
 ```
 
+
+## Quickstart
+
+```bash
+npm i -g tokencut          # or: npx tokencut
+echo '[{"role":"user","content":"hello"}]' > payload.json
+tokencut payload.json
+```
+
+Expected (numbers are estimates; exact values vary slightly by version):
+
+```
+  tokencut analyze
+  total    ~1 tokens  ($0.000)
+  by role
+    user                 1  #
+  by kind
+    text                 1  #
+```
+
+Compact a bloated tool result:
+
+```bash
+tokencut payload.json --compact --max-tool 100
+```
+
+
 ## What it does
 
 - **Analyze**: breaks a payload down by role and block kind (system, text, tool_use, tool_result) and surfaces the biggest single blocks, with a cost estimate.

@@ -93,6 +93,7 @@ test("compact rejects invalid budgets before transforming the payload", () => {
   }
 });
 
+
 test("analyzePayload handles empty messages and whitespace-only content", () => {
   const empty = analyzePayload({ messages: [] });
   assert.equal(empty.totalTokens, 0);
@@ -119,4 +120,28 @@ test("compact is a no-op on already-small payloads", () => {
   const { payload: out, report } = compact(payload, { maxTokens: 10_000 });
   assert.equal(out.messages.length, 1);
   assert.ok(report.afterTokens <= report.beforeTokens);
+});
+test("analyzePayload empty messages yields zero tokens", () => {
+  const a = analyzePayload({ messages: [] });
+  assert.equal(a.totalTokens, 0);
+  assert.equal(a.units, 0);
+  assert.equal(a.costUSD, 0);
+  assert.deepEqual(a.biggest, []);
+});
+
+test("analyzePayload empty array payload yields zero tokens", () => {
+  const a = analyzePayload([]);
+  assert.equal(a.totalTokens, 0);
+  assert.equal(a.units, 0);
+});
+
+test("units rejects non-array payload.messages with TypeError", () => {
+  assert.throws(
+    () => analyzePayload({ messages: "not-an-array" }),
+    { name: "TypeError", message: /payload\.messages must be an array/ },
+  );
+  assert.throws(
+    () => compact({ messages: { bad: true } }),
+    { name: "TypeError", message: /payload\.messages must be an array/ },
+  );
 });
