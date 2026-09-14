@@ -18,6 +18,7 @@ if (!file || has("--help")) {
     --out <file>     write the compacted payload
     --price <n>      $ per 1M input tokens for the cost estimate (default 3)
     --json           machine-readable output
+    --version, -V    print package version
 
 Payload: an array of messages, or { system, messages } (Anthropic or OpenAI style).`);
   process.exit(file ? 0 : 1);
