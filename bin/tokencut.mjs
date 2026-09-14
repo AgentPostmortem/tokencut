@@ -21,6 +21,16 @@ const flag = (name, def) => (name in options ? options[name] : def);
 const has = (name) => name in options;
 const file = positionals[0];
 
+if (has("--version") || has("-V")) {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    console.log(pkg.version ?? "0.0.0");
+  } catch {
+    console.log("0.0.0");
+  }
+  process.exit(0);
+}
+
 if (!file || has("--help")) {
   console.log(`tokencut -- measure and cut the token cost of an LLM/agent payload
 
@@ -32,6 +42,7 @@ if (!file || has("--help")) {
     --out <file>     write the compacted payload
     --price <n>      $ per 1M input tokens for the cost estimate (default 3)
     --json           machine-readable output
+    --version, -V    print package version
 
 Payload: an array of messages, or { system, messages } (Anthropic or OpenAI style).`);
   process.exit(file ? 0 : 1);
