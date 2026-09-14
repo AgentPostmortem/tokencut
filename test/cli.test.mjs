@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -55,4 +55,15 @@ test("accepts zero as a compact token budget", () => {
   const result = run("--compact", "--max", "0", "--json");
   assert.equal(result.status, 0, result.stderr);
   assert.doesNotThrow(() => JSON.parse(result.stdout));
+});
+
+
+test("--version prints package version", () => {
+  const r = spawnSync(process.execPath, ["bin/tokencut.mjs", "--version"], {
+    cwd: new URL("..", import.meta.url),
+    encoding: "utf8",
+  });
+  assert.equal(r.status, 0);
+  const ver = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+  assert.equal(r.stdout.trim(), ver);
 });
