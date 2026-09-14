@@ -94,6 +94,7 @@ test("compact rejects invalid budgets before transforming the payload", () => {
 });
 
 
+
 test("analyzePayload null / undefined yields zero tokens", () => {
   assert.equal(analyzePayload(null).totalTokens, 0);
   assert.equal(analyzePayload(undefined).totalTokens, 0);
@@ -119,6 +120,34 @@ test("compact null payload returns empty messages without throwing", () => {
   assert.equal(report.beforeTokens, 0);
   assert.equal(report.afterTokens, 0);
 });
+test("analyzePayload handles empty messages and whitespace-only content", () => {
+  const empty = analyzePayload({ messages: [] });
+  assert.equal(empty.totalTokens, 0);
+
+  const whitespace = analyzePayload({
+    messages: [{ role: "user", content: "   \n\t  " }],
+  });
+  assert.ok(whitespace.totalTokens >= 0);
+
+  const mixed = analyzePayload({
+    system: "",
+    messages: [
+      { role: "user", content: [] },
+      { role: "assistant", content: "" },
+    ],
+  });
+  assert.ok(mixed.totalTokens >= 0);
+});
+
+test("compact is a no-op on already-small payloads", () => {
+  const payload = {
+    messages: [{ role: "user", content: "hi" }],
+  };
+  const { payload: out, report } = compact(payload, { maxTokens: 10_000 });
+  assert.equal(out.messages.length, 1);
+  assert.ok(report.afterTokens <= report.beforeTokens);
+});
+
 test("analyzePayload empty messages yields zero tokens", () => {
   const a = analyzePayload({ messages: [] });
   assert.equal(a.totalTokens, 0);
