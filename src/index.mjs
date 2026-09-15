@@ -10,7 +10,9 @@ export function estimateTokens(text) {
   if (!s) return 0;
   const chars = s.length;
   const words = (s.match(/\S+/g) || []).length;
-  return Math.max(Math.ceil(chars / 4), Math.ceil(words * 1.3));
+  const cjkChars = (s.match(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\u3040-\u30FF\uAC00-\uD7AF]/g) || []).length;
+  const charEstimate = Math.ceil((chars - cjkChars) / 4) + cjkChars;
+  return Math.max(charEstimate, Math.ceil(words * 1.3));
 }
 
 // Flatten any supported payload into text units: {role, kind, text}.

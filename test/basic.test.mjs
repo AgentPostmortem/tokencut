@@ -172,3 +172,14 @@ test("units rejects non-array payload.messages with TypeError", () => {
     { name: "TypeError", message: /payload\.messages must be an array/ },
   );
 });
+
+test("estimateTokens keeps CJK text within the documented reference tolerance", () => {
+  const text = "漢".repeat(200);
+  const referenceTokens = 200;
+  const tolerance = 0.15;
+  const estimated = estimateTokens(text);
+  assert.ok(
+    Math.abs(estimated - referenceTokens) <= referenceTokens * tolerance,
+    `estimated ${estimated}, expected within 15% of ${referenceTokens}`,
+  );
+});
