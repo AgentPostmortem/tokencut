@@ -172,3 +172,10 @@ test("units rejects non-array payload.messages with TypeError", () => {
     { name: "TypeError", message: /payload\.messages must be an array/ },
   );
 });
+
+test("analyzePayload validates pricePerMTok and top", () => {
+  const payload = { messages: [{ role: "user", content: "hello" }] };
+  assert.throws(() => analyzePayload(payload, { pricePerMTok: -5 }), RangeError);
+  assert.throws(() => analyzePayload(payload, { top: -1 }), RangeError);
+  assert.throws(() => analyzePayload(payload, { top: 1.5 }), RangeError);
+});

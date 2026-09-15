@@ -56,6 +56,8 @@ function units(payload) {
 
 // Report the token breakdown of a payload and where the tokens are going.
 export function analyzePayload(payload, { pricePerMTok = 3, counter = estimateTokens, top = 10 } = {}) {
+  requireNonNegativeNumber("pricePerMTok", pricePerMTok);
+  requireNonNegativeNumber("top", top, { integer: true });
   const us = units(payload).map((u) => ({ ...u, tokens: counter(u.text) }));
   const total = us.reduce((a, u) => a + u.tokens, 0);
   const byKind = {}, byRole = {};
