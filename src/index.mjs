@@ -156,9 +156,22 @@ export function compact(payload, opts = {}) {
       for (let j = 0; j < Math.max(0, trimmableEnd); j++) { if (!isSystem(list[j])) { idx = j; break; } }
       if (idx < 0) break; // nothing left safe to drop
       const removed = list[idx];
-      after -= blocksOf(removed.content, removed.role || "user")
-        .reduce((total, unit) => total + counter(unit.text), 0);
-      list.splice(idx, 1);
+      const pairedIndexes = new Set([idx]);
+      const removedBlocks = Array.isArray(removed.content) ? removed.content : [];
+      const removedToolUses = removedBlocks.filter((b) => b && b.type === "tool_use").map((b) => b.id).filter(Boolean);
+      if (removedToolUses.length) {
+        for (let k = 0; k < list.length; k++) {
+          if (k === idx) continue;
+          const blocks = Array.isArray(list[k].content) ? list[k].content : [];
+          if (blocks.some((b) => b && b.type === "tool_result" && removedToolUses.includes(b.tool_use_id))) pairedIndexes.add(k);
+        }
+      }
+      const removedMessages = [...pairedIndexes].sort((a, b) => b - a).map((index) => list[index]);
+      for (const message of removedMessages) {
+        after -= blocksOf(message.content, message.role || "user")
+          .reduce((total, unit) => total + counter(unit.text), 0);
+      }
+      for (const index of [...pairedIndexes].sort((a, b) => b - a)) list.splice(index, 1);
       actions.push("drop:oldest-message");
       if (++i > 1000) break;
     }
