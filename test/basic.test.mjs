@@ -172,3 +172,16 @@ test("units rejects non-array payload.messages with TypeError", () => {
     { name: "TypeError", message: /payload\.messages must be an array/ },
   );
 });
+
+test("analyzePayload charges image_url blocks a flat documented estimate", () => {
+  const short = analyzePayload({ messages: [{ role: "user", content: [
+    { type: "image_url", image_url: { url: "https://example.com/a.png" } },
+  ] }] });
+  const long = analyzePayload({ messages: [{ role: "user", content: [
+    { type: "image_url", image_url: { url: `https://example.com/${"a".repeat(2000)}.png` } },
+  ] }] });
+
+  assert.equal(short.byKind.image_url, 85);
+  assert.equal(long.byKind.image_url, 85);
+  assert.equal(short.totalTokens, long.totalTokens);
+});
