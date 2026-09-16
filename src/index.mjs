@@ -15,6 +15,10 @@ export function estimateTokens(text) {
   return Math.max(charEstimate, Math.ceil(words * 1.3));
 }
 
+// Built-in flat estimate for image inputs. Image token accounting varies by model,
+// so keep this deterministic and independent of URL length.
+const IMAGE_TOKENS = 85;
+
 // Flatten any supported payload into text units: {role, kind, text}.
 // Supported: an array of messages, or { system, messages }.
 // Message content may be a string or an array of Anthropic-style blocks.
@@ -28,6 +32,7 @@ function blocksOf(content, role) {
       else if (b && b.type === "text") out.push({ role, kind: "text", text: b.text || "" });
       else if (b && b.type === "tool_use") out.push({ role, kind: "tool_use", text: JSON.stringify(b.input || {}) });
       else if (b && b.type === "tool_result") out.push({ role, kind: "tool_result", text: typeof b.content === "string" ? b.content : JSON.stringify(b.content ?? "") });
+      else if (b && b.type === "image_url") out.push({ role, kind: "image_url", text: "", fixedTokens: IMAGE_TOKENS });
       else out.push({ role, kind: (b && b.type) || "other", text: JSON.stringify(b) });
     }
     return out;
@@ -58,7 +63,7 @@ function units(payload) {
 
 // Report the token breakdown of a payload and where the tokens are going.
 export function analyzePayload(payload, { pricePerMTok = 3, counter = estimateTokens, top = 10 } = {}) {
-  const us = units(payload).map((u) => ({ ...u, tokens: counter(u.text) }));
+  const us = units(payload).map((u) => ({ ...u, tokens: u.fixedTokens ?? counter(u.text) }));
   const total = us.reduce((a, u) => a + u.tokens, 0);
   const byKind = {}, byRole = {};
   for (const u of us) {
@@ -171,7 +176,7 @@ export function compact(payload, opts = {}) {
       const removedMessages = [...pairedIndexes].sort((a, b) => b - a).map((index) => list[index]);
       for (const message of removedMessages) {
         after -= blocksOf(message.content, message.role || "user")
-          .reduce((total, unit) => total + counter(unit.text), 0);
+          .reduce((total, unit) => total + (unit.fixedTokens ?? counter(unit.text)), 0);
       }
       for (const index of [...pairedIndexes].sort((a, b) => b - a)) list.splice(index, 1);
       actions.push("drop:oldest-message");
