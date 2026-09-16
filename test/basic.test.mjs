@@ -174,6 +174,13 @@ test("units rejects non-array payload.messages with TypeError", () => {
 });
 
 
+
+test("analyzePayload validates pricePerMTok and top", () => {
+  const payload = { messages: [{ role: "user", content: "hello" }] };
+  assert.throws(() => analyzePayload(payload, { pricePerMTok: -5 }), RangeError);
+  assert.throws(() => analyzePayload(payload, { top: -1 }), RangeError);
+  assert.throws(() => analyzePayload(payload, { top: 1.5 }), RangeError);
+});
 test("analyzePayload charges image_url blocks a flat documented estimate", () => {
   const short = analyzePayload({ messages: [{ role: "user", content: [
     { type: "image_url", image_url: { url: "https://example.com/a.png" } },
@@ -186,6 +193,7 @@ test("analyzePayload charges image_url blocks a flat documented estimate", () =>
   assert.equal(long.byKind.image_url, 85);
   assert.equal(short.totalTokens, long.totalTokens);
 });
+
 test("estimateTokens keeps CJK text within the documented reference tolerance", () => {
   const text = "漢".repeat(200);
   const referenceTokens = 200;
