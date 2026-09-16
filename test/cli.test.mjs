@@ -67,3 +67,15 @@ test("--version prints package version", () => {
   const ver = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
   assert.equal(r.stdout.trim(), ver);
 });
+
+
+test("rejects compact budget flags without --compact", async (t) => {
+  for (const flag of ["--max", "--max-tool"]) {
+    await t.test(flag, () => {
+      const result = run(flag, "1");
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /requires --compact/);
+      assert.equal(result.stdout, "");
+    });
+  }
+});
