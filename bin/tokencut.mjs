@@ -60,6 +60,10 @@ const numericFlag = (name, def) => {
   return value;
 };
 const price = numericFlag("--price", 3);
+if (!has("--compact") && (has("--max") || has("--max-tool"))) {
+  console.error("--max and --max-tool requires --compact");
+  process.exit(1);
+}
 const maxTokens = has("--max") ? numericFlag("--max", null) : null;
 const maxToolResultTokens = numericFlag("--max-tool", 500);
 let payload;
