@@ -173,6 +173,17 @@ test("units rejects non-array payload.messages with TypeError", () => {
   );
 });
 
+
+test("estimateTokens keeps CJK text within the documented reference tolerance", () => {
+  const text = "漢".repeat(200);
+  const referenceTokens = 200;
+  const tolerance = 0.15;
+  const estimated = estimateTokens(text);
+  assert.ok(
+    Math.abs(estimated - referenceTokens) <= referenceTokens * tolerance,
+    `estimated ${estimated}, expected within 15% of ${referenceTokens}`,
+  );
+});
 test("compact does not leave tool_result without its tool_use when trimming", () => {
   const payload = {
     messages: [
