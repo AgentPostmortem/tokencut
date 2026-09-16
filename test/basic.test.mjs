@@ -172,3 +172,18 @@ test("units rejects non-array payload.messages with TypeError", () => {
     { name: "TypeError", message: /payload\.messages must be an array/ },
   );
 });
+
+test("compact does not leave tool_result without its tool_use when trimming", () => {
+  const payload = {
+    messages: [
+      { role: "assistant", content: [{ type: "tool_use", id: "call-1", input: {} }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "call-1", content: "result" }] },
+      ...Array.from({ length: 8 }, (_, i) => ({ role: "user", content: "old message " + i + " x".repeat(100) })),
+    ],
+  };
+  const { payload: out } = compact(payload, { maxTokens: 20, keepLastTurns: 2 });
+  const toolUses = new Set(out.messages.flatMap((m) => (Array.isArray(m.content) ? m.content : [])).filter((b) => b?.type === "tool_use").map((b) => b.id));
+  for (const b of out.messages.flatMap((m) => (Array.isArray(m.content) ? m.content : []))) {
+    if (b?.type === "tool_result") assert.ok(toolUses.has(b.tool_use_id));
+  }
+});
