@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { analyzePayload, compact } from "../src/index.mjs";
 
 const args = process.argv.slice(2);
 // Value-taking flags: when one is seen, the next argv entry is its value, not a file path.
-const VALUE_FLAGS = new Set(["--max", "--max-tool", "--price", "--out"]);
+const VALUE_FLAGS = new Set(["--max", "--max-tool", "--price", "--out", "--tokenizer"]);
 const options = {};
 const positionals = [];
 for (let i = 0; i < args.length; i++) {
@@ -41,6 +43,7 @@ if (!file || has("--help")) {
     --no-dedupe      keep duplicate context blocks
     --out <file>     write the compacted payload
     --price <n>      $ per 1M input tokens for the cost estimate (default 3)
+    --tokenizer <module>  load a local module exporting count(text) -> number
     --json           machine-readable output
     --version, -V    print package version
 
@@ -70,6 +73,25 @@ let payload;
 try { payload = JSON.parse(readFileSync(file, "utf8")); }
 catch (e) { console.error(`could not read ${file}: ${e.message}`); process.exit(1); }
 
+let counter;
+if (has("--tokenizer")) {
+  const modulePath = flag("--tokenizer");
+  if (typeof modulePath !== "string") {
+    console.error("--tokenizer requires a module path");
+    process.exit(1);
+  }
+  try {
+    const tokenizer = await import(pathToFileURL(resolve(modulePath)).href);
+    if (typeof tokenizer.count !== "function") {
+      throw new TypeError("module must export a count(text) function");
+    }
+    counter = tokenizer.count;
+  } catch (e) {
+    console.error(`could not load tokenizer ${modulePath}: ${e.message}`);
+    process.exit(1);
+  }
+}
+
 const k = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : "" + n);
 const usd = (n) => "$" + n.toFixed(n < 0.01 ? 5 : 4);
 
@@ -78,6 +100,7 @@ if (has("--compact")) {
     maxTokens,
     maxToolResultTokens,
     dropDuplicates: !has("--no-dedupe"),
+    counter,
   });
   if (flag("--out", null)) {
     const outPath = String(flag("--out", null));
@@ -99,7 +122,7 @@ if (has("--compact")) {
   if (flag("--out", null)) console.log(`  wrote    ${flag("--out", null)}`);
   console.log();
 } else {
-  const a = analyzePayload(payload, { pricePerMTok: price });
+  const a = analyzePayload(payload, { pricePerMTok: price, counter });
   if (has("--json")) { console.log(JSON.stringify(a, null, 2)); process.exit(0); }
   console.log(`\n  tokencut  ${k(a.totalTokens)} tokens  (~${usd(a.costUSD)} at $${price}/M)  across ${a.units} blocks\n`);
   const row = (label, obj) => {

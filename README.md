@@ -91,6 +91,39 @@ be an integer; invalid values throw a `RangeError` before the payload changes.
 
 Token counts are a fast **estimate** (a chars/word blend), typically within ~10-15% of exact BPE counts, enough to find waste and compare before/after. For exact counts, pass your own counter: `analyzePayload(payload, { counter: myTokenizer })`.
 
+### Use a tokenizer from the CLI
+
+`--tokenizer <module>` loads a local JavaScript module exporting a synchronous
+`count(text)` function that returns a numeric token count. Relative paths resolve
+from your current working directory, not from the payload file. The same counter
+is used for analysis and compaction; without the flag, the built-in estimate is
+unchanged. Only load modules you trust, since they execute in the CLI process.
+
+For example, install [gpt-tokenizer](https://github.com/niieani/gpt-tokenizer) in
+your own project (it is not a tokencut dependency):
+
+```bash
+npm install gpt-tokenizer
+```
+
+Save this as `my-counter.mjs` beside that project's `package.json`:
+
+```js
+import { encode } from "gpt-tokenizer";
+export function count(text) {
+  return encode(text).length;
+}
+```
+
+```bash
+tokencut payload.json --tokenizer ./my-counter.mjs --json
+tokencut payload.json --compact --max 8000 --tokenizer ./my-counter.mjs
+```
+
+Choose an encoding appropriate for your model. This replaces text-unit counts;
+it does not add provider-specific message framing or replace image-token
+estimates, and compaction still preserves protected messages.
+
 ## CLI reference
 
 ```
@@ -101,6 +134,7 @@ tokencut <payload.json> --compact    cut, print savings
   --no-dedupe      keep duplicate blocks
   --out <file>     write the compacted payload
   --price <n>      $ per 1M input tokens for the estimate (default 3)
+  --tokenizer <module>  load a local module exporting count(text) -> number
   --json           machine-readable output
 ```
 
