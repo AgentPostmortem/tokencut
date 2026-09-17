@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- CLI `--tokenizer` option to use a local module's `count(text)` function for
+  analysis and compaction without adding runtime dependencies.
+
 ### Fixed
 
 - Invalid or negative numeric CLI flags now fail clearly instead of producing
