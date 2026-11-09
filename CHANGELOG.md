@@ -6,6 +6,7 @@
 
 - CLI `--tokenizer` option to use a local module's `count(text)` function for
   analysis and compaction without adding runtime dependencies.
+- Compaction reports whether an explicit token budget was met in the API and CLI.
 
 ### Fixed
 

@@ -117,6 +117,9 @@ if (has("--compact")) {
   console.log(`  before   ${k(r.beforeTokens)} tokens  (${usd((r.beforeTokens / 1e6) * price)})`);
   console.log(`  after    ${k(r.afterTokens)} tokens  (${usd((r.afterTokens / 1e6) * price)})`);
   console.log(`  saved    ${k(r.savedTokens)} tokens  ${r.savedPct}%  (${usd((r.savedTokens / 1e6) * price)})`);
+  if (r.metBudget !== undefined) {
+    console.log(`  budget   ${r.metBudget ? "met" : "not met"} (token limit ${maxTokens})`);
+  }
   const counts = r.actions.reduce((m, a) => { const key = a.split(":").slice(0, 2).join(":"); m[key] = (m[key] || 0) + 1; return m; }, {});
   if (Object.keys(counts).length) console.log(`  actions  ` + Object.entries(counts).map(([a, n]) => `${a} x${n}`).join(", "));
   if (flag("--out", null)) console.log(`  wrote    ${flag("--out", null)}`);
