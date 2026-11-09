@@ -99,7 +99,14 @@ export function compact(payload, opts = {}) {
   if (payload == null) {
     return {
       payload: { messages: [] },
-      report: { beforeTokens: 0, afterTokens: 0, savedTokens: 0, savedPct: 0, actions: [] },
+      report: {
+        beforeTokens: 0,
+        afterTokens: 0,
+        savedTokens: 0,
+        savedPct: 0,
+        actions: [],
+        ...(maxTokens == null ? {} : { metBudget: true }),
+      },
     };
   }
   const before = analyzePayload(payload, { counter }).totalTokens;
@@ -186,5 +193,15 @@ export function compact(payload, opts = {}) {
     }
   }
 
-  return { payload: out, report: { beforeTokens: before, afterTokens: after, savedTokens: before - after, savedPct: before ? Math.round(((before - after) / before) * 100) : 0, actions } };
+  return {
+    payload: out,
+    report: {
+      beforeTokens: before,
+      afterTokens: after,
+      savedTokens: before - after,
+      savedPct: before ? Math.round(((before - after) / before) * 100) : 0,
+      actions,
+      ...(maxTokens == null ? {} : { metBudget: after <= maxTokens }),
+    },
+  };
 }

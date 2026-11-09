@@ -79,11 +79,14 @@ const { payload, report: cut } = compact(messages, {
   maxTokens: 8000,            // trim oldest messages to fit
   keepLastTurns: 4,           // never drop the most recent turns
 });
-// cut -> { beforeTokens, afterTokens, savedTokens, savedPct, actions }
+// cut -> { beforeTokens, afterTokens, savedTokens, savedPct, actions, metBudget }
 ```
 
 Token budgets must be finite, non-negative numbers. `keepLastTurns` must also
 be an integer; invalid values throw a `RangeError` before the payload changes.
+When you set `maxTokens` (CLI `--max`), `report.metBudget` tells you whether
+the remaining token count is within the limit. The text CLI output also shows
+whether the budget was met, and `--json` includes the report field.
 
 `payload` is an array of messages, or `{ system, messages }`. Message `content` may be a string or an array of Anthropic-style blocks.
 

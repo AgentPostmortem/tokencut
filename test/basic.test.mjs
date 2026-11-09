@@ -51,6 +51,25 @@ test("compact trims oldest messages to a hard budget, keeps system", () => {
   assert.equal(out.messages[0].role, "system");
 });
 
+test("compact reports whether an explicit token budget was met", () => {
+  const payload = [
+    { role: "user", content: "old message" },
+    { role: "assistant", content: "hello" },
+  ];
+
+  const blocked = compact(payload, { maxTokens: 1 });
+  assert.deepEqual(blocked.payload, payload);
+  assert.ok(blocked.report.afterTokens > 1);
+  assert.equal(blocked.report.metBudget, false);
+
+  const trimmed = compact(payload, { maxTokens: 2, keepLastTurns: 1 });
+  assert.equal(trimmed.report.afterTokens, 2);
+  assert.equal(trimmed.report.metBudget, true);
+
+  assert.equal(compact(null, { maxTokens: 0 }).report.metBudget, true);
+  assert.equal(Object.hasOwn(compact(payload).report, "metBudget"), false);
+});
+
 test("compact trims a large payload with linear token counting", () => {
   const messages = Array.from({ length: 500 }, (_, i) => ({
     role: "user",

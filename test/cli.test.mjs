@@ -55,7 +55,21 @@ test("rejects invalid numeric flags with the flag and received value", async (t)
 test("accepts zero as a compact token budget", () => {
   const result = run("--compact", "--max", "0", "--json");
   assert.equal(result.status, 0, result.stderr);
-  assert.doesNotThrow(() => JSON.parse(result.stdout));
+  assert.equal(JSON.parse(result.stdout).metBudget, false);
+});
+
+test("prints the compact budget outcome", () => {
+  const missed = run("--compact", "--max", "1");
+  assert.equal(missed.status, 0, missed.stderr);
+  assert.match(missed.stdout, /budget\s+not met \(token limit 1\)/);
+
+  const met = run("--compact", "--max", "2");
+  assert.equal(met.status, 0, met.stderr);
+  assert.match(met.stdout, /budget\s+met \(token limit 2\)/);
+
+  const unspecified = run("--compact");
+  assert.equal(unspecified.status, 0, unspecified.stderr);
+  assert.doesNotMatch(unspecified.stdout, /budget/);
 });
 
 
