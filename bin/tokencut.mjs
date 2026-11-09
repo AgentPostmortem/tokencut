@@ -7,17 +7,28 @@ import { analyzePayload, compact } from "../src/index.mjs";
 const args = process.argv.slice(2);
 // Value-taking flags: when one is seen, the next argv entry is its value, not a file path.
 const VALUE_FLAGS = new Set(["--max", "--max-tool", "--price", "--out", "--tokenizer"]);
+const SWITCH_FLAGS = new Set(["--compact", "--no-dedupe", "--json", "--help", "--version", "-V"]);
 const options = {};
 const positionals = [];
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
-  if (VALUE_FLAGS.has(a)) {
+  if (a === "--") {
+    positionals.push(...args.slice(i + 1));
+    break;
+  } else if (VALUE_FLAGS.has(a)) {
     options[a] = args[i + 1] && !args[i + 1].startsWith("--") ? args[++i] : true;
-  } else if (a.startsWith("--")) {
+  } else if (SWITCH_FLAGS.has(a)) {
     options[a] = true;
+  } else if (a.startsWith("-") && a !== "-") {
+    console.error(`Unknown option: ${a}`);
+    process.exit(2);
   } else {
     positionals.push(a);
   }
+}
+if (positionals.length > 1) {
+  console.error("Expected exactly one payload file");
+  process.exit(2);
 }
 const flag = (name, def) => (name in options ? options[name] : def);
 const has = (name) => name in options;

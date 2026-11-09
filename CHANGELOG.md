@@ -13,6 +13,7 @@
   `NaN` costs or silently skipping token-budget compaction.
 - `compact()` now rejects negative or non-finite token budgets and invalid
   protected-turn counts before transforming the payload.
+- The CLI exits with status 2 for unknown options or multiple payload files.
 
 ## [0.1.1] - 2026-08-06
 
