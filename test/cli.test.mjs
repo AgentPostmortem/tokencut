@@ -18,6 +18,33 @@ function run(...args) {
   });
 }
 
+test("rejects unknown flags with a usage error", () => {
+  for (const flag of ["--bogus", "-x"]) {
+    const result = run(flag);
+    assert.equal(result.status, 2);
+    assert.equal(result.stderr, `Unknown option: ${flag}\n`);
+    assert.equal(result.stdout, "");
+  }
+});
+
+test("rejects a second payload file with a usage error", () => {
+  const result = run(fixture);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /expected exactly one payload file/i);
+  assert.equal(result.stdout, "");
+});
+
+test("accepts a dash-prefixed payload file after --", () => {
+  const file = "--payload.json";
+  writeFileSync(join(fixtureDir, file), JSON.stringify([{ role: "user", content: "hello" }]));
+  const result = spawnSync(process.execPath, [
+    fileURLToPath(new URL("../bin/tokencut.mjs", import.meta.url)),
+    "--json", "--", file,
+  ], { cwd: fixtureDir, encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).totalTokens, 2);
+});
+
 test("rejects invalid numeric flags with the flag and received value", async (t) => {
   const cases = [
     {
@@ -59,14 +86,16 @@ test("accepts zero as a compact token budget", () => {
 });
 
 
-test("--version prints package version", () => {
-  const r = spawnSync(process.execPath, ["bin/tokencut.mjs", "--version"], {
-    cwd: new URL("..", import.meta.url),
-    encoding: "utf8",
-  });
-  assert.equal(r.status, 0);
+test("--version and -V print the package version", () => {
   const ver = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
-  assert.equal(r.stdout.trim(), ver);
+  for (const flag of ["--version", "-V"]) {
+    const result = spawnSync(process.execPath, ["bin/tokencut.mjs", flag], {
+      cwd: new URL("..", import.meta.url),
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), ver);
+  }
 });
 
 
