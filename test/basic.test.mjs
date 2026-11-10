@@ -25,6 +25,23 @@ test("analyzePayload totals across roles and kinds", () => {
   assert.ok(a.costUSD > 0);
 });
 
+test("analyzePayload counts bare strings as user text", () => {
+  const expected = analyzePayload([{ role: "user", content: "hello world" }]);
+  assert.ok(expected.totalTokens > 0);
+  assert.deepEqual(analyzePayload(["hello world"]), expected);
+  assert.deepEqual(analyzePayload({ messages: ["hello world"] }), expected);
+});
+
+test("compact subtracts bare strings it removes from the token budget", () => {
+  const messages = ["older message", "keep this"];
+  const maxTokens = estimateTokens(messages[1]);
+  const { payload, report } = compact(messages, { maxTokens, keepLastTurns: 1 });
+  assert.deepEqual(payload, messages.slice(1));
+  assert.equal(report.beforeTokens, estimateTokens(messages[0]) + maxTokens);
+  assert.equal(report.afterTokens, maxTokens);
+  assert.equal(report.afterTokens, analyzePayload(payload).totalTokens);
+});
+
 test("compact truncates a bloated tool_result and reports savings", () => {
   const payload = { messages: [{ role: "user", content: [{ type: "tool_result", content: "x".repeat(8000) }] }] };
   const { payload: out, report } = compact(payload, { maxToolResultTokens: 100 });

@@ -40,6 +40,11 @@ function blocksOf(content, role) {
   return [{ role, kind: "other", text: JSON.stringify(content) }];
 }
 
+function messageUnits(message) {
+  if (typeof message === "string") return blocksOf(message, "user");
+  return blocksOf(message.content, message.role || "user");
+}
+
 function units(payload) {
   const out = [];
   if (payload && !Array.isArray(payload) && payload.system) out.push(...blocksOf(payload.system, "system"));
@@ -57,7 +62,7 @@ function units(payload) {
   } else {
     msgs = payload.messages;
   }
-  for (const m of msgs) out.push(...blocksOf(m.content, m.role || "user"));
+  for (const m of msgs) out.push(...messageUnits(m));
   return out;
 }
 
@@ -177,7 +182,7 @@ export function compact(payload, opts = {}) {
       }
       const removedMessages = [...pairedIndexes].sort((a, b) => b - a).map((index) => list[index]);
       for (const message of removedMessages) {
-        after -= blocksOf(message.content, message.role || "user")
+        after -= messageUnits(message)
           .reduce((total, unit) => total + (unit.fixedTokens ?? counter(unit.text)), 0);
       }
       for (const index of [...pairedIndexes].sort((a, b) => b - a)) list.splice(index, 1);
